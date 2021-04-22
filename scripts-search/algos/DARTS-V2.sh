@@ -40,4 +40,4 @@ OMP_NUM_THREADS=4 python ./exps/algos/DARTS-V2.py \
 	--arch_nas_dataset ${benchmark_file} \
 	--track_running_stats ${BN} \
 	--arch_learning_rate 0.0003 --arch_weight_decay 0.001 \
-	--workers 4 --print_freq 200 --rand_seed ${seed}
+	--workers 1 --print_freq 200 --rand_seed ${seed}

@@ -138,10 +138,16 @@ def search_func(
         xloader
     ):
         #----------cifar-----------
-        base_targets = base_inputs
-        arch_targets = arch_inputs
-        base_inputs = base_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
-        arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
+        # base_targets = base_inputs
+        # arch_targets = arch_inputs
+        # base_inputs = base_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
+        # arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
+        img_size = 112
+        batch_size = 2
+        base_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
+        arch_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
+        base_targets = torch.rand(batch_size, 3, img_size, img_size)
+        arch_targets = torch.rand(batch_size, 3, img_size, img_size)
         #--------------------------
         scheduler.update(None, 1.0 * step / len(xloader))
         base_targets = base_targets.cuda(non_blocking=True)
@@ -218,8 +224,12 @@ def valid_func(xloader, network, criterion):
     with torch.no_grad():
         for step, (arch_inputs, arch_targets) in enumerate(xloader):
             #----------cifar-----------
-            arch_targets = arch_inputs
-            arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
+            # arch_targets = arch_inputs
+            # arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
+            img_size = 112
+            batch_size = 2
+            arch_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
+            arch_targets = torch.rand(batch_size, 3, img_size, img_size)
             #--------------------------
             arch_targets = arch_targets.cuda(non_blocking=True)
             # measure data loading time
@@ -256,6 +266,8 @@ def main(xargs):
     config = load_config(
         xargs.config_path, {"class_num": class_num, "xshape": xshape}, logger
     )
+    # print('batch_size:', config.batch_size)
+    # exit(0)
     search_loader, _, valid_loader = get_nas_search_loaders(
         train_data,
         valid_data,
@@ -303,7 +315,9 @@ def main(xargs):
     logger.log("w-scheduler : {:}".format(w_scheduler))
     logger.log("criterion   : {:}".format(criterion))
     
-    xshape = (8, 7, 3, 32, 32)
+    img_size = 112
+    batch_size = 2
+    xshape = (batch_size, 7, 3, img_size, img_size)
     # flop, param = get_model_infos(search_model, xshape)
     # logger.log('{:}'.format(search_model))
     # logger.log("FLOP = {:.2f} M, Params = {:.2f} MB".format(flop, param))
@@ -366,7 +380,7 @@ def main(xargs):
                 epoch_str, need_time, min_LR
             )
         )
-        
+
         search_w_loss, search_w_top1, search_w_top5 = search_func(
             search_loader,
             network,

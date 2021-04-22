@@ -422,10 +422,10 @@ class EDVRDarts(nn.Module):
                  num_feat=64,
                  num_frame=7,
                  deformable_groups=8,
-                 num_extract_block=5,
-                 num_reconstruct_block=10,
-                 center_frame_idx=2,
-                 hr_in=False,
+                 num_extract_block=2,
+                 num_reconstruct_block=2,
+                 center_frame_idx=3,
+                 hr_in=True,
                  with_predeblur=False,
                  with_tsa=True):
         super(EDVRDarts, self).__init__()
@@ -517,9 +517,9 @@ class EDVRDarts(nn.Module):
 
 
         # upsample
-        self.upconv1 = nn.Conv2d(num_feat, num_feat * 4, 3, 1, 1)
-        self.upconv2 = nn.Conv2d(num_feat, 64 * 4, 3, 1, 1)
-        self.pixel_shuffle = nn.PixelShuffle(2)
+        # self.upconv1 = nn.Conv2d(num_feat, num_feat * 4, 3, 1, 1)
+        # self.upconv2 = nn.Conv2d(num_feat, 64 * 4, 3, 1, 1)
+        # self.pixel_shuffle = nn.PixelShuffle(2)
         self.conv_hr = nn.Conv2d(64, 64, 3, 1, 1)
         self.conv_last = nn.Conv2d(64, 3, 3, 1, 1)
 
@@ -601,9 +601,8 @@ class EDVRDarts(nn.Module):
         out = feat
         #-------------------------------------
 
-
-        out = self.lrelu(self.pixel_shuffle(self.upconv1(out)))
-        out = self.lrelu(self.pixel_shuffle(self.upconv2(out)))
+        # out = self.lrelu(self.pixel_shuffle(self.upconv1(out)))
+        # out = self.lrelu(self.pixel_shuffle(self.upconv2(out)))
         out = self.lrelu(self.conv_hr(out))
         out = self.conv_last(out)
         if self.hr_in:
@@ -612,7 +611,7 @@ class EDVRDarts(nn.Module):
             base = F.interpolate(
                 x_center, scale_factor=4, mode='bilinear', align_corners=False)
         out += base
-        return out, out[:, :, :32, :32]
+        return out, out
 
     def get_weights(self):
         if self.with_predeblur:
@@ -632,9 +631,9 @@ class EDVRDarts(nn.Module):
 
         xlist += list( self.reconstruction_cells.parameters() )
 
-        xlist += list( self.upconv1.parameters() )
-        xlist += list( self.upconv2.parameters() )
-        xlist += list( self.pixel_shuffle.parameters() )
+        # xlist += list( self.upconv1.parameters() )
+        # xlist += list( self.upconv2.parameters() )
+        # xlist += list( self.pixel_shuffle.parameters() )
         xlist += list( self.conv_hr.parameters() )
         xlist += list( self.conv_last.parameters() )
 
