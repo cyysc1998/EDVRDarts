@@ -143,7 +143,7 @@ def search_func(
         # base_inputs = base_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
         # arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
         img_size = 112
-        batch_size = 2
+        batch_size = 8
         base_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
         arch_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
         base_targets = torch.rand(batch_size, 3, img_size, img_size)
@@ -227,7 +227,7 @@ def valid_func(xloader, network, criterion):
             # arch_targets = arch_inputs
             # arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
             img_size = 112
-            batch_size = 2
+            batch_size = 8
             arch_inputs = torch.rand(batch_size, 7, 3, img_size, img_size)
             arch_targets = torch.rand(batch_size, 3, img_size, img_size)
             #--------------------------
@@ -316,7 +316,7 @@ def main(xargs):
     logger.log("criterion   : {:}".format(criterion))
     
     img_size = 112
-    batch_size = 2
+    batch_size = config.batch_size
     xshape = (batch_size, 7, 3, img_size, img_size)
     # flop, param = get_model_infos(search_model, xshape)
     # logger.log('{:}'.format(search_model))

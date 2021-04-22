@@ -10,9 +10,9 @@ OPS = {
   'none'         : lambda C_in, C_out, stride, affine, track_running_stats: Zero(C_in, C_out, stride),
   'avg_pool_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: POOLING(C_in, C_out, stride, 'avg', affine, track_running_stats),
   'max_pool_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: POOLING(C_in, C_out, stride, 'max', affine, track_running_stats),
-  'nor_conv_7x7' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConvBN(C_in, C_out, (7,7), (stride,stride), (3,3), (1,1), affine, track_running_stats),
-  'nor_conv_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConvBN(C_in, C_out, (3,3), (stride,stride), (1,1), (1,1), affine, track_running_stats),
-  'nor_conv_1x1' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConvBN(C_in, C_out, (1,1), (stride,stride), (0,0), (1,1), affine, track_running_stats),
+  'nor_conv_7x7' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConv(C_in, C_out, (7,7), (stride,stride), (3,3), (1,1), affine, track_running_stats),
+  'nor_conv_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConv(C_in, C_out, (3,3), (stride,stride), (1,1), (1,1), affine, track_running_stats),
+  'nor_conv_1x1' : lambda C_in, C_out, stride, affine, track_running_stats: ReLUConv(C_in, C_out, (1,1), (stride,stride), (0,0), (1,1), affine, track_running_stats),
   'dua_sepc_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: DualSepConv(C_in, C_out, (3,3), (stride,stride), (1,1), (1,1), affine, track_running_stats),
   'dua_sepc_5x5' : lambda C_in, C_out, stride, affine, track_running_stats: DualSepConv(C_in, C_out, (5,5), (stride,stride), (2,2), (1,1), affine, track_running_stats),
   'dil_sepc_3x3' : lambda C_in, C_out, stride, affine, track_running_stats: SepConv(C_in, C_out, (3,3), (stride,stride), (2,2), (2,2), affine, track_running_stats),
@@ -30,14 +30,13 @@ SearchSpaceNames = {'connect-nas'  : CONNECT_NAS_BENCHMARK,
                     'darts'        : DARTS_SPACE}
 
 
-class ReLUConvBN(nn.Module):
+class ReLUConv(nn.Module):
 
   def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine, track_running_stats=True):
-    super(ReLUConvBN, self).__init__()
+    super(ReLUConv, self).__init__()
     self.op = nn.Sequential(
-      nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_out, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=not affine),
-      nn.BatchNorm2d(C_out, affine=affine, track_running_stats=track_running_stats)
+      nn.LeakyReLU(0.1),
+      nn.Conv2d(C_in, C_out, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=not affine)
     )
 
   def forward(self, x):
@@ -49,10 +48,9 @@ class SepConv(nn.Module):
   def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine, track_running_stats=True):
     super(SepConv, self).__init__()
     self.op = nn.Sequential(
-      nn.ReLU(inplace=False),
+      nn.LeakyReLU(0.1),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
-      nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=not affine),
-      nn.BatchNorm2d(C_out, affine=affine, track_running_stats=track_running_stats),
+      nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=not affine)
       )
 
   def forward(self, x):
@@ -77,14 +75,14 @@ class ResNetBasicblock(nn.Module):
   def __init__(self, inplanes, planes, stride, affine=True, track_running_stats=True):
     super(ResNetBasicblock, self).__init__()
     assert stride == 1 or stride == 2, 'invalid stride {:}'.format(stride)
-    self.conv_a = ReLUConvBN(inplanes, planes, 3, stride, 1, 1, affine, track_running_stats)
-    self.conv_b = ReLUConvBN(  planes, planes, 3,      1, 1, 1, affine, track_running_stats)
+    self.conv_a = ReLUConv(inplanes, planes, 3, stride, 1, 1, affine, track_running_stats)
+    self.conv_b = ReLUConv(  planes, planes, 3,      1, 1, 1, affine, track_running_stats)
     if stride == 2:
       self.downsample = nn.Sequential(
                            nn.AvgPool2d(kernel_size=2, stride=2, padding=0),
                            nn.Conv2d(inplanes, planes, kernel_size=1, stride=1, padding=0, bias=False))
     elif inplanes != planes:
-      self.downsample = ReLUConvBN(inplanes, planes, 1, 1, 0, 1, affine, track_running_stats)
+      self.downsample = ReLUConv(inplanes, planes, 1, 1, 0, 1, affine, track_running_stats)
     else:
       self.downsample = None
     self.in_dim  = inplanes
@@ -115,7 +113,7 @@ class POOLING(nn.Module):
     if C_in == C_out:
       self.preprocess = None
     else:
-      self.preprocess = ReLUConvBN(C_in, C_out, 1, 1, 0, 1, affine, track_running_stats)
+      self.preprocess = ReLUConv(C_in, C_out, 1, 1, 0, 1, affine, track_running_stats)
     if mode == 'avg'  : self.op = nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False)
     elif mode == 'max': self.op = nn.MaxPool2d(3, stride=stride, padding=1)
     else              : raise ValueError('Invalid mode={:} in POOLING'.format(mode))
