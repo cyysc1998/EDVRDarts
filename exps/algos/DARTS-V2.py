@@ -219,7 +219,7 @@ def valid_func(xloader, network, criterion):
         for step, (arch_inputs, arch_targets) in enumerate(xloader):
             #----------cifar-----------
             arch_targets = arch_inputs
-            arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1)
+            arch_inputs = arch_inputs.unsqueeze(1).repeat(1, 7, 1, 1, 1)
             #--------------------------
             arch_targets = arch_targets.cuda(non_blocking=True)
             # measure data loading time
@@ -307,11 +307,11 @@ def main(xargs):
     # flop, param = get_model_infos(search_model, xshape)
     # logger.log('{:}'.format(search_model))
     # logger.log("FLOP = {:.2f} M, Params = {:.2f} MB".format(flop, param))
-    if xargs.arch_nas_dataset is None:
-        api = None
-    else:
-        api = API(xargs.arch_nas_dataset)
-    # api = None
+    # if xargs.arch_nas_dataset is None:
+    #     api = None
+    # else:
+    #     api = API(xargs.arch_nas_dataset)
+    api = None
     logger.log("{:} create API = {:} done".format(time_string(), api))
 
     last_info, model_base_path, model_best_path = (
@@ -366,7 +366,7 @@ def main(xargs):
                 epoch_str, need_time, min_LR
             )
         )
-
+        
         search_w_loss, search_w_top1, search_w_top5 = search_func(
             search_loader,
             network,
